@@ -43,22 +43,21 @@ const SessionsPage = lazy(() => import("../../features/admin/pages/Sessions"));
 const AgendaPage = lazy(() => import("../../features/admin/pages/Agenda"));
 const ExamsPage = lazy(() => import("../../features/admin/pages/Exams"));
 const AssignmentsPage = lazy(() => import("../../features/admin/pages/Assignments"));
-const SubscriptionRequestsPage = lazy(
-  () => import("../../features/admin/pages/SubscriptionRequests"),
-);
+const SubscriptionRequestsPage = lazy(() => import("../../features/admin/pages/SubscriptionRequests"));
 const AllSubscriptionsPage = lazy(() => import("../../features/admin/pages/AllSubscriptions"));
 const PlansPage = lazy(() => import("../../features/admin/pages/Plans"));
 const CurrenciesPage = lazy(() => import("../../features/admin/pages/Currencies"));
 const ExpensesPage = lazy(() => import("../../features/admin/pages/Expenses"));
 const TransactionsPage = lazy(() => import("../../features/admin/pages/Transactions"));
 const TeacherRequestsPage = lazy(() => import("../../features/admin/pages/TeacherRequests"));
-const TeacherAvailabilityPage = lazy(
-  () => import("../../features/admin/pages/TeacherAvailability"),
-);
+const TeacherAvailabilityPage = lazy(() => import("../../features/admin/pages/TeacherAvailability"));
 const SubjectsPage = lazy(() => import("../../features/admin/pages/Subjects"));
 const LMSCoursesPage = lazy(() => import("../../features/admin/pages/LMSCourses/LMSCourses"));
 const SettingsPage = lazy(() => import("../../features/admin/pages/Settings"));
 const RolesPage = lazy(() => import("../../features/admin/pages/Roles"));
+const RequestsPage = lazy(() => import("../../features/admin/pages/Requests"));
+const CurriculumPage = lazy(() => import("../../features/admin/pages/Curriculum"));
+const LibraryPage = lazy(() => import("../../features/admin/pages/Library"));
 
 export const adminDashboardRoutes: RouteConfig[] = [
   {
@@ -161,6 +160,20 @@ export const adminDashboardRoutes: RouteConfig[] = [
         element: <SessionsPage />,
       },
       {
+        id: "curriculum",
+        label: "Curriculum Shelf",
+        icon: Layers,
+        path: "curriculum",
+        element: <CurriculumPage />,
+      },
+      {
+        id: "library",
+        label: "Content Library",
+        icon: BookOpen,
+        path: "library",
+        element: <LibraryPage />,
+      },
+      {
         id: "agenda",
         label: "sidebar_agenda",
         icon: Calendar,
@@ -182,6 +195,13 @@ export const adminDashboardRoutes: RouteConfig[] = [
         element: <AssignmentsPage />,
       },
     ],
+  },
+  {
+    id: "requests",
+    label: "Requests Management",
+    icon: ClipboardList,
+    path: "requests",
+    element: <RequestsPage />
   },
   {
     id: "subscriptions",

@@ -1,14 +1,6 @@
-import { X } from 'lucide-react';
-import { useEffect, useMemo } from 'react';
-import { useLanguage } from '../../contexts/LanguageContext';
-import CustomSelect from '../ui/CustomSelect';
-import DatePickerField from '../ui/DatePickerField';
-import { SessionFormData, getSessionSchema } from '../../lib/schemas/SessionSchema';
-import { useStudents } from '../../features/admin/hooks/useStudents';
-import { useTeacher } from '../../features/admin/hooks/useTeacher';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import CustomTimePicker from '../ui/CustomTime';
+import { X, Search, Video, ChevronDown, AlertCircle, Calendar, MonitorPlay, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { SessionFormData } from '../../lib/schemas/SessionSchema';
 
 interface AddSessionModalProps {
   isOpen: boolean;
@@ -17,353 +9,293 @@ interface AddSessionModalProps {
 }
 
 export default function AddSessionModal({ isOpen, onClose, onAdd }: AddSessionModalProps) {
-  const { language, t } = useLanguage();
-
-  const { register, handleSubmit, control, watch, setValue, reset, formState: { errors } } = useForm<SessionFormData>({
-    resolver: zodResolver(getSessionSchema(t)),
-    defaultValues: {
-      student: '', teacher: '', subject: '', title: '',
-      description: '', type: 'full', notification_Time: '10',
-      sessionDate: '', duration: '', startTime: '', endTime: '',
-      meetingLink: '', notes: ''
-    }
-  });
-
-  const selectedTeacher = watch('teacher');
-  const selectedStudent = watch('student');
-  const selectedDurationId = watch('duration');
-  const startTimeVal = watch('startTime');
-
-  useEffect(() => {
-    if (!isOpen) reset();
-  }, [isOpen, reset]);
-
-  const { data: studentsData } = useStudents();
-  const { data: teachersData } = useTeacher();
-
-  const students = studentsData?.data?.studentsData || [];
-  const teachers = teachersData?.teachers || [];
-
-  const studentOptions = students.map(s => ({ value: s.id, label: s.user.name }));
-  const teacherOptions = teachers.map(t => ({ value: t.id, label: t.user.name }));
-
-  const durationPackages: Record<string, { name: string; duration: number }> = {
-    '1': { name: '30 دقيقة', duration: 30 },
-    '2': { name: '45 دقيقة', duration: 45 },
-    '3': { name: '60 دقيقة', duration: 60 },
-  };
-
-  useEffect(() => {
-    if (selectedDurationId && startTimeVal) {
-      const durationMins = durationPackages[selectedDurationId]?.duration || 0;
-      if (durationMins > 0) {
-        const [hours, minutes] = startTimeVal.split(':').map(Number);
-        if (!isNaN(hours) && !isNaN(minutes)) {
-          const date = new Date();
-          date.setHours(hours, minutes + durationMins, 0, 0);
-          const endH = String(date.getHours()).padStart(2, '0');
-          const endM = String(date.getMinutes()).padStart(2, '0');
-          setValue('endTime', `${endH}:${endM}`, { shouldValidate: true });
-        }
-      }
-    }
-  }, [selectedDurationId, startTimeVal, setValue]);
-
-  const selectedTeacherData = teachers.find(t => t.id === selectedTeacher);
-  const availableSubjects = useMemo(() => {
-    return selectedTeacherData ? selectedTeacherData.teacherSubjects.map((ts) => ({
-      value: ts.subject.id,
-      label: language === 'ar' ? ts.subject.name_ar : ts.subject.name_en
-    })) : [];
-  }, [selectedTeacherData, language]);
-
-  const selectedStudentData = students.find(s => s.id === selectedStudent);
-  const selectedStudentPackage = selectedStudentData ? {
-    name: language === 'ar' ? selectedStudentData.plan?.name_ar : selectedStudentData.plan?.name_en || 'No Package',
-    sessionsRemaining: selectedStudentData.sessions_remaining || 0,
-    totalSessions: selectedStudentData.sessions || 0,
-  } : null;
-
-
-
-  const onFormSubmit = (data: SessionFormData) => {
-    onAdd(data);
-    onClose();
-  };
+  const [schedulingMode, setSchedulingMode] = useState<'single' | 'batch'>('batch');
+  const [selectedDays, setSelectedDays] = useState<string[]>(['Mon', 'Thu']);
+  const [meetingPlatform, setMeetingPlatform] = useState<'zoom' | 'google' | null>('zoom');
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh]  overflow-y-auto no-scrollbar">
-        <div className="sticky top-0 bg-primary border-b border-gray-100 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-2xl font-bold text-white">{t('addSingleSession_title')}</h2>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <X className="w-6 h-6 text-white" />
-          </button>
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4 font-sans">
+      <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-[950px] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="px-8 py-5 border-b border-gray-100 flex items-start justify-between bg-white">
+           <div className="flex items-center gap-4">
+             <div className="w-12 h-12 rounded-[14px] bg-indigo-50 flex items-center justify-center">
+               <Calendar className="w-6 h-6 text-[#6366f1]" />
+             </div>
+             <div>
+               <h2 className="text-xl font-bold text-gray-900 leading-tight">Create New Session</h2>
+               <p className="text-[13px] font-semibold text-gray-400 mt-0.5">Configure and schedule learning tracks for students.</p>
+             </div>
+           </div>
+           <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
+             <X className="w-5 h-5" />
+           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onFormSubmit)} className="p-6">
-          <div className="space-y-6">
-            {/* Student and Teacher */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Body */}
+        <div className="flex flex-col md:flex-row min-h-[500px]">
+          
+          {/* Left Column - Configuration */}
+          <div className="w-full md:w-[55%] p-8 bg-white overflow-y-auto">
+            
+            {/* Student & Instructor Selectors */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
-                <Controller
-                  name="student"
-                  control={control}
-                  render={({ field }) => (
-                    <CustomSelect
-                      label={t('studentLabel')}
-                      value={field.value}
-                      options={studentOptions}
-                      onChange={field.onChange}
-                      placeholder={t('selectStudent')}
-                      className="h-[46px]"
-                    />
-                  )}
-                />
-                {errors.student && <span className="text-red-500 text-xs mt-1 block text-start">{errors.student.message}</span>}
+                <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Student</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search Student..." 
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#6366f1]/20 transition-all placeholder:text-gray-400 placeholder:font-medium"
+                  />
+                </div>
               </div>
-
               <div>
-                <Controller
-                  name="teacher"
-                  control={control}
-                  render={({ field }) => (
-                    <CustomSelect
-                      label={t('teacherLabel')}
-                      value={field.value}
-                      options={teacherOptions}
-                      onChange={(val) => {
-                        field.onChange(val);
-                        setValue('subject', '');
-                      }}
-                      placeholder={t('selectTeacher')}
-                      className="h-[46px]"
-                    />
-                  )}
-                />
-                {errors.teacher && <span className="text-red-500 text-xs mt-1 block text-start">{errors.teacher.message}</span>}
+                <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Instructor</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="text" 
+                    placeholder="Search Instructor..." 
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#6366f1]/20 transition-all placeholder:text-gray-400 placeholder:font-medium"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Package Details */}
-            {selectedStudentPackage && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-blue-900 mb-3 text-start">{t('packageInfo')}</h3>
-                <div className="grid grid-cols-3 gap-4 text-start">
+            {/* Scheduling Mode Toggle */}
+            <div className="mb-6">
+              <label className="block text-[11px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Scheduling Mode</label>
+              <div className="flex p-1 bg-gray-50 border border-gray-100 rounded-xl">
+                <button 
+                  onClick={() => setSchedulingMode('single')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${schedulingMode === 'single' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Single Session
+                </button>
+                <button 
+                  onClick={() => setSchedulingMode('batch')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${schedulingMode === 'batch' ? 'bg-white text-[#6366f1] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Batch Scheduling
+                </button>
+              </div>
+            </div>
+
+            {/* Batch Config Card */}
+            {schedulingMode === 'batch' && (
+              <div className="bg-indigo-50/50 border border-indigo-100/60 rounded-2xl p-5 mb-6">
+                <div className="grid grid-cols-2 gap-4 mb-5">
                   <div>
-                    <p className="text-xs text-blue-600 mb-1">{t('packageName')}</p>
-                    <p className="text-sm font-medium text-blue-900">{language === 'ar' ? selectedStudentData?.plan?.name_ar : selectedStudentData?.plan?.name_en}</p>
+                    <label className="block text-[11px] font-bold text-indigo-900/60 mb-1.5 uppercase tracking-wider">Number of Sessions</label>
+                    <input 
+                      type="number" 
+                      defaultValue={12}
+                      className="w-full px-4 py-2.5 bg-white border border-indigo-100 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    />
                   </div>
                   <div>
-                    <p className="text-xs text-blue-600 mb-1">{t('sessionsRemaining')}</p>
-                    <p className="text-sm font-medium text-blue-900">{selectedStudentPackage.sessionsRemaining}</p>
+                    <label className="block text-[11px] font-bold text-indigo-900/60 mb-1.5 uppercase tracking-wider">Daily Start Time</label>
+                    <input 
+                      type="time" 
+                      defaultValue="14:00"
+                      className="w-full px-4 py-2.5 bg-white border border-indigo-100 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    />
                   </div>
-                  <div>
-                    <p className="text-xs text-blue-600 mb-1">{t('totalSessions')}</p>
-                    <p className="text-sm font-medium text-blue-900">{selectedStudentPackage.totalSessions}</p>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-indigo-900/60 mb-2 uppercase tracking-wider">Auto-scheduling Frequency</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => {
+                      const isSelected = selectedDays.includes(day);
+                      return (
+                        <button
+                          key={day}
+                          onClick={() => {
+                            if (isSelected) setSelectedDays(prev => prev.filter(d => d !== day));
+                            else setSelectedDays(prev => [...prev, day]);
+                          }}
+                          className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                            isSelected 
+                              ? 'bg-white border-[#6366f1] text-[#6366f1] shadow-sm' 
+                              : 'bg-white border-transparent text-gray-500 hover:border-gray-200'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      )
+                    })}
+                    <button className="px-3 py-1.5 text-xs font-bold rounded-lg border border-transparent bg-white text-gray-500 hover:border-gray-200 transition-all ml-auto">
+                      Custom
+                    </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Subject */}
-            <div className="space-y-2">
-              <Controller
-                name="subject"
-                control={control}
-                render={({ field }) => (
-                  <CustomSelect
-                    label={t('subjectLabel')}
-                    value={field.value}
-                    options={availableSubjects}
-                    onChange={field.onChange}
-                    placeholder={selectedTeacher ? t('selectSubject') : t('teacherQuestion')}
-                    className="h-[46px]"
-                    disabled={!selectedTeacher}
-                  />
-                )}
-              />
-              {errors.subject && <span className="text-red-500 text-xs block text-start">{errors.subject.message}</span>}
-            </div>
-
-            {/* Date and Title */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2 text-start">
-                <DatePickerField
-                  label={`${t('sessionDate')} `}
-                  value={watch('sessionDate')}
-                  onChange={(val) => setValue('sessionDate', val, { shouldValidate: true })}
-                  error={errors.sessionDate?.message}
-                />
+            {/* Meeting Platform */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider">Meeting Platform</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase">Apply to all</span>
+                  <div className="w-7 h-4 bg-[#6366f1] rounded-full relative cursor-pointer">
+                    <div className="absolute right-0.5 top-0.5 w-3 h-3 bg-white rounded-full shadow-sm"></div>
+                  </div>
+                </div>
               </div>
-
-              <div className="space-y-2 text-start">
-                <label className="block text-sm font-medium text-gray-700">
-                  {t('sessionTitleLabel')} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  {...register('title')}
-                  placeholder={t('sessionTitlePlaceholder')}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-start"
-                />
-                {errors.title && <span className="text-red-500 text-xs">{errors.title.message}</span>}
+              <div className="grid grid-cols-2 gap-3">
+                <button 
+                  onClick={() => setMeetingPlatform('zoom')}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
+                    meetingPlatform === 'zoom' 
+                      ? 'bg-gray-900 border-gray-900 text-white shadow-md' 
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Video className="w-4 h-4" />
+                  Zoom Meet
+                </button>
+                <button 
+                  onClick={() => setMeetingPlatform('google')}
+                  className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
+                    meetingPlatform === 'google' 
+                      ? 'bg-gray-900 border-gray-900 text-white shadow-md' 
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <MonitorPlay className="w-4 h-4" />
+                  Google Meet
+                </button>
               </div>
             </div>
 
-            {/* Description and Type */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2 text-start">
-                <label className="block text-sm font-medium text-gray-700">
-                  {t('description')}
-                </label>
-                <textarea
-                  {...register('description')}
-                  placeholder={t('descriptionPlaceholder')}
-                  rows={2}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-start resize-none ${errors.description ? 'border-red-500' : 'border-gray-200'}`}
-                />
-                {errors.description && <span className="text-red-500 text-xs mt-1 block text-start">{errors.description.message}</span>}
-              </div>
-
-              <div className="space-y-2">
-                <Controller
-                  name="type"
-                  control={control}
-                  render={({ field }) => (
-                    <CustomSelect
-                      label={t('type')}
-                      value={field.value}
-                      options={[
-                        { value: 'full', label: t('full') },
-                        { value: 'half', label: t('half') },
-                      ]}
-                      onChange={field.onChange}
-                      className="h-[46px]"
-                    />
-                  )}
-                />
-                {errors.type && <span className="text-red-500 text-xs mt-1 block text-start">{errors.type.message}</span>}
-              </div>
-            </div>
-
-            {/* Notification Time */}
-            <div className="space-y-2">
-              <Controller
-                name="notification_Time"
-                control={control}
-                render={({ field }) => (
-                  <CustomSelect
-                    label={t('notificationTime')}
-                    value={field.value}
-                    options={[
-                      { value: '10', label: language === 'ar' ? '10 دقائق' : '10 min' },
-                      { value: '30', label: language === 'ar' ? '30 دقيقة' : '30 min' },
-                      { value: '60', label: language === 'ar' ? '60 دقيقة' : '60 min' },
-                    ]}
-                    onChange={field.onChange}
-                    className="h-[46px]"
-                  />
-                )}
-              />
-            </div>
-
-            {/* Duration and Time */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Controller
-                  name="duration"
-                  control={control}
-                  render={({ field }) => (
-                    <CustomSelect
-                      label={t('duration')}
-                      value={field.value}
-                      options={Object.entries(durationPackages).map(([id, pkg]) => ({
-                        value: id,
-                        label: pkg.name
-                      }))}
-                      onChange={field.onChange}
-                      placeholder={t('selectDuration')}
-                      className="h-[46px]"
-                    />
-                  )}
-                />
-                {errors.duration && <span className="text-red-500 text-xs block text-start">{errors.duration.message}</span>}
-              </div>
-
-              <div className="space-y-2 text-start">
-
-                {/* <input
-                  type="time"
-                  {...register('startTime')}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-start"
-                />
-                {errors.startTime && <span className="text-red-500 text-xs">{errors.startTime.message}</span>} */}
-                <Controller
-                  name="startTime"
-                  control={control}
-                  render={({ field }) => (
-                    <CustomTimePicker
-                      label={t('startTime')}
-                      value={field.value}
-                      onChange={field.onChange}
-                      error={errors.startTime?.message}
-                    />
-                  )}
-                />
-              </div>
-
-              <div className="space-y-2 text-start">
-                <label className="block text-sm font-medium text-gray-700">
-                  {t('endTime')} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="time"
-                  disabled
-                  {...register('endTime')}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-start"
-                />
-                {errors.endTime && <span className="text-red-500 text-xs">{errors.endTime.message}</span>}
-              </div>
-            </div>
-
-            {/* Meeting Link and Notes */}
-            <div className="space-y-4">
-              <div className="space-y-2 text-start">
-                <label className="block text-sm font-medium text-gray-700">{t('meetingLink')}</label>
-                <input
-                  type="url"
-                  {...register('meetingLink')}
-                  placeholder="https://zoom.us/..."
-                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-start"
-                  dir="ltr"
-                />
-              </div>
-              <div className="space-y-2 text-start">
-                <label className="block text-sm font-medium text-gray-700">{t('notes')}</label>
-                <textarea
-                  {...register('notes')}
-                  placeholder={t('notesPlaceholder')}
-                  rows={3}
-                  className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent text-start resize-none ${errors.notes ? 'border-red-500' : 'border-gray-200'}`}
-                />
-                {errors.notes && <span className="text-red-500 text-xs mt-1 block text-start">{errors.notes.message}</span>}
-              </div>
-            </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3 mt-8">
-            <button type="submit" className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl transition-colors font-medium hover:bg-blue-700">
-              {t('add')}
+          {/* Right Column - Schedule Preview */}
+          <div className="w-full md:w-[45%] bg-[#f8fafc] border-l border-gray-100 flex flex-col">
+            <div className="p-6 border-b border-gray-100/50 flex items-center justify-between bg-[#f8fafc]">
+              <h3 className="font-bold text-gray-900 text-sm">Schedule Preview</h3>
+              <span className="px-2.5 py-1 bg-blue-100 text-[#2563eb] border border-blue-200 text-[9px] font-black rounded-full tracking-widest uppercase shadow-sm">
+                12 Sessions Total
+              </span>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-3">
+              
+              {/* Card 1 */}
+              <div className="bg-white border border-gray-100 rounded-2xl p-3 flex gap-4 shadow-sm hover:border-gray-200 transition-all">
+                <div className="w-12 h-12 bg-gray-50 rounded-xl flex flex-col items-center justify-center flex-shrink-0 border border-gray-100/50">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Oct</span>
+                  <span className="text-sm font-black text-gray-900">24</span>
+                </div>
+                <div className="flex-1 pt-0.5">
+                  <div className="flex items-start justify-between">
+                    <h4 className="text-xs font-bold text-gray-900">Session 01 - Mathematics</h4>
+                    <span className="px-1.5 py-0.5 bg-green-50 text-green-600 border border-green-200 text-[8px] font-black uppercase tracking-widest rounded shadow-sm">Available</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[10px] font-bold text-gray-400">02:00 PM - Room 402</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2 - Conflict */}
+              <div className="bg-red-50/30 border border-red-300 rounded-2xl p-3 flex gap-4 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+                <div className="w-12 h-12 bg-red-50 rounded-xl flex flex-col items-center justify-center flex-shrink-0 border border-red-100">
+                  <span className="text-[9px] font-black text-red-400 uppercase tracking-widest">Oct</span>
+                  <span className="text-sm font-black text-red-600">26</span>
+                </div>
+                <div className="flex-1 pt-0.5">
+                  <div className="flex items-start justify-between">
+                    <h4 className="text-xs font-bold text-gray-900">Session 02 - Mathematics</h4>
+                    <span className="px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-bold uppercase tracking-wider rounded flex items-center gap-1 shadow-sm">
+                      <AlertTriangle className="w-2.5 h-2.5" /> Clash Detected
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[10px] font-bold text-red-500 flex items-center gap-1">
+                       Room 402 Occupied
+                    </span>
+                  </div>
+                  <button className="text-[10px] font-bold text-[#6366f1] hover:underline mt-1.5">
+                    Relocate to Room 10B
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 3 */}
+              <div className="bg-white border border-gray-100 rounded-2xl p-3 flex gap-4 shadow-sm hover:border-gray-200 transition-all">
+                <div className="w-12 h-12 bg-gray-50 rounded-xl flex flex-col items-center justify-center flex-shrink-0 border border-gray-100/50">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Oct</span>
+                  <span className="text-sm font-black text-gray-900">31</span>
+                </div>
+                <div className="flex-1 pt-0.5">
+                  <div className="flex items-start justify-between">
+                    <h4 className="text-xs font-bold text-gray-900">Session 03 - Mathematics</h4>
+                    <span className="px-1.5 py-0.5 bg-green-50 text-green-600 border border-green-200 text-[8px] font-black uppercase tracking-widest rounded shadow-sm">Available</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[10px] font-bold text-gray-400">02:00 PM - Room 402</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4 */}
+              <div className="bg-white border border-gray-100 rounded-2xl p-3 flex gap-4 shadow-sm hover:border-gray-200 transition-all">
+                <div className="w-12 h-12 bg-gray-50 rounded-xl flex flex-col items-center justify-center flex-shrink-0 border border-gray-100/50">
+                  <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Nov</span>
+                  <span className="text-sm font-black text-gray-900">02</span>
+                </div>
+                <div className="flex-1 pt-0.5">
+                  <div className="flex items-start justify-between">
+                    <h4 className="text-xs font-bold text-gray-900">Session 04 - Mathematics</h4>
+                    <span className="px-1.5 py-0.5 bg-green-50 text-green-600 border border-green-200 text-[8px] font-black uppercase tracking-widest rounded shadow-sm">Available</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <span className="text-[10px] font-bold text-gray-400">02:00 PM - Room 402</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center pt-2 pb-4">
+                <button className="text-[11px] font-bold text-[#6366f1] hover:underline flex items-center justify-center gap-1 w-full">
+                  View 8 more sessions <ChevronDown className="w-3 h-3" />
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-8 py-5 border-t border-gray-100 bg-white flex items-center justify-between">
+          <div className="flex items-center gap-2 text-red-500">
+             <AlertCircle className="w-4 h-4" />
+             <span className="text-[11px] font-bold">1 Conflict needs resolution</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={onClose}
+              className="px-6 py-2 text-xs font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-xl transition-colors"
+            >
+              Save Draft
             </button>
-            <button type="button" onClick={onClose} className="flex-1 px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium">
-              {t('cancel')}
+            <button 
+              className="px-6 py-2.5 bg-[#6366f1] hover:bg-[#4f46e5] text-white text-xs font-bold rounded-xl transition-colors flex items-center gap-2 shadow-sm"
+            >
+              Schedule Batch
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
             </button>
           </div>
-        </form>
+        </div>
+
       </div>
     </div>
   );

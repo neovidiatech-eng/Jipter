@@ -1,245 +1,308 @@
-import { DollarSign, Calendar, Users, GraduationCap, Clock, FileText, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
-import { useState } from 'react';
-import { useSettings } from '../../../contexts/SettingsContext';
-import SubscribePlanModal from '../../../components/modals/SubscribePlanModal';
-import { useTranslation } from 'react-i18next';
+import React from 'react';
+import {
+  Download,
+  Bell,
+  Users,
+  BookOpen,
+  Clock,
+  Calendar,
+  ArrowRight,
+  MoreHorizontal,
+  ChevronDown,
+} from 'lucide-react';
 
 export default function Dashboard() {
-  const { t } = useTranslation();
-  const { settings } = useSettings();
-  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
-
-  const stats = {
-    students: { total: 22, new: 0, active: 22 },
-    teachers: { total: 7, new: 0, active: 7 },
-    sessions: { total: 3, thisWeek: 3, today: 0 },
-    expenses: { total: 0, thisMonth: 0 }
-  };
-
-  const secondaryStats = {
-    assignments: { total: 9, pending: 9, completed: 0 },
-    exams: { total: 5, completed: 0, upcoming: 5 },
-    subscriptions: { total: 26, active: 24, suspended: 2 },
-    completionRate: { rate: 0, totalTasks: 14 }
-  };
-
-  const alerts = [
-    { type: 'warning', title: t('alerts'), message: t('noAlerts'), icon: AlertCircle },
-    { type: 'success', title: t('status'), message: t('allSystemsNormal'), icon: CheckCircle },
-    { type: 'info', title: t('needs'), message: t('dataAutoUpdate'), icon: FileText }
-  ];
-
-  const StatCard = ({ title, value, subtitle, icon: Icon, color, hexColor, details }: any) => (
-    <div
-      className={`bg-white rounded-2xl p-6 border-r-4 shadow-sm hover:shadow-md transition-shadow ${!hexColor ? color : ''}`}
-      style={hexColor ? { borderRightColor: hexColor } : {}}
-    >
-      <div className="flex items-start justify-between mb-4">
-        <div className="text-right flex-1">
-          <p className="text-gray-600 text-sm mb-1">{title}</p>
-          <h3 className="text-4xl font-bold text-gray-900">{value}</h3>
-          {subtitle && <p className="text-gray-500 text-xs mt-1">{subtitle}</p>}
+  return (
+    <div className="min-h-screen bg-[#f8f9fc] p-8 font-sans" dir="ltr">
+      {/* Header Area */}
+      <div className="flex justify-between items-start mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Good Morning, Sarah</h1>
+          <p className="text-sm text-gray-500">Here's what's happening in the club kit today.</p>
         </div>
-        <div className={`p-3 rounded-xl ${!hexColor ? color.replace('border', 'bg').replace('500', '100') : ''}`} style={hexColor ? { backgroundColor: hexColor + '20' } : {}}>
-          <Icon className={`w-8 h-8 ${!hexColor ? color.replace('border', 'text') : ''}`} style={hexColor ? { color: hexColor } : {}} />
-        </div>
-      </div>
-      {details && (
-        <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
-          {details.map((detail: any, idx: number) => (
-            <div key={idx} className="text-right">
-              <p className="text-xs text-gray-500">{detail.label}</p>
-              <p className={`text-sm font-semibold ${detail.color || 'text-gray-900'}`}>
-                {detail.value}
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  const SmallStatCard = ({ title, value, details, icon: Icon, color, hexColor }: any) => (
-    <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between mb-4">
-        <div className="text-right flex-1">
-          <p className="text-gray-600 text-sm mb-2">{title}</p>
-          <h4 className="text-3xl font-bold text-gray-900">{value}</h4>
-        </div>
-        <div className={`p-3 rounded-lg ${!hexColor ? color : ''}`} style={hexColor ? { backgroundColor: hexColor } : {}}>
-          <Icon className="w-6 h-6 text-white" />
-        </div>
-      </div>
-      <div className="space-y-2">
-        {details.map((detail: any, idx: number) => (
-          <div key={idx} className="flex items-center justify-between text-sm">
-            <span className={detail.color || 'text-gray-600'}>{detail.label}</span>
-            <span className="font-medium text-gray-900">{detail.value}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const AlertCard = ({ type, title, message, icon: Icon }: any) => {
-    const colors = {
-      warning: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-      success: 'bg-green-50 border-green-200 text-green-800',
-      info: ''
-    };
-
-    const iconColors = {
-      warning: 'text-yellow-600',
-      success: 'text-green-600',
-      info: ''
-    };
-
-    const isInfo = type === 'info';
-
-    return (
-      <div
-        className={`rounded-xl p-6 border ${!isInfo ? colors[type as keyof typeof colors] : ''}`}
-        style={isInfo ? { backgroundColor: settings.primaryColor + '10', borderColor: settings.primaryColor + '40', color: settings.primaryColor + 'cc' } : {}}
-      >
-        <div className="flex items-start gap-3">
-          <Icon
-            className={`w-6 h-6 ${!isInfo ? iconColors[type as keyof typeof iconColors] : ''} flex-shrink-0`}
-            style={isInfo ? { color: settings.primaryColor } : {}}
-          />
-          <div className="text-right flex-1">
-            <h4 className="font-bold mb-1 flex items-center gap-2">
-              <span>{title}</span>
-              {type === 'warning' && <span className="text-sm">⚠️</span>}
-              {type === 'success' && <span className="text-sm">✅</span>}
-              {type === 'info' && <span className="text-sm">📊</span>}
-            </h4>
-            <p className="text-sm">{message}</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderDashboardHome = () => (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="rounded-2xl p-8 text-white relative overflow-hidden" style={{ background: `linear-gradient(to right, ${settings.primaryColor}, ${settings.accentColor})` }}>
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 text-right">{t('welcomeDashboard')}</h1>
-            <p className="text-right opacity-80">{t('dashboardSubtitle')}</p>
-          </div>
-          <button
-            onClick={() => setShowSubscribeModal(true)}
-            className="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg hover:-translate-y-1"
-          >
-            <Sparkles className="w-5 h-5" />
-            {t('subscribeToUnlock')}
+        <div className="flex items-center gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+            <Download className="w-4 h-4" />
+            Export Data
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-[#5e5ce6] text-white rounded-lg text-sm font-medium hover:bg-[#4b49b8] transition-colors shadow-sm">
+            <Bell className="w-4 h-4" />
+            Send Notification
           </button>
         </div>
       </div>
 
-      {/* Main Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <StatCard
-          title={t('students')}
-          value={stats.students.total}
-          icon={GraduationCap}
-          color="border-pink-500"
-          details={[
-            { label: t('activeLabel'), value: stats.students.active },
-            { label: t('newLabel'), value: stats.students.new, color: 'text-green-600' }
-          ]}
-        />
-        <StatCard
-          title={t('teachers')}
-          value={stats.teachers.total}
-          icon={Users}
-          color="border-orange-500"
-          details={[
-            { label: t('activeLabel'), value: stats.teachers.active },
-            { label: t('newLabel'), value: stats.teachers.new, color: 'text-green-600' }
-          ]}
-        />
-        <StatCard
-          title={t('sessions')}
-          value={stats.sessions.total}
-          icon={Calendar}
-          color=""
-          hexColor={settings.primaryColor}
-          details={[
-            { label: t('today'), value: stats.sessions.today },
-            { label: t('thisWeek'), value: stats.sessions.thisWeek }
-          ]}
-        />
-        <StatCard
-          title={t('expenses')}
-          value={`${stats.expenses.total} ${t('currencySAR')}`}
-          subtitle={t('thisMonth')}
-          icon={DollarSign}
-          color="border-green-500"
-        />
+      {/* Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        {/* Card 1 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between h-36 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+              <Users className="w-4 h-4" />
+            </div>
+            <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md">
+              +15%
+            </span>
+          </div>
+          <div>
+            <p className="text-[10px] text-gray-500 font-bold mb-1 tracking-wider uppercase">Total Students</p>
+            <h3 className="text-2xl font-bold text-gray-900">12,642</h3>
+          </div>
+        </div>
+
+        {/* Card 2 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between h-36 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-[#5e5ce6]">
+              <BookOpen className="w-4 h-4" />
+            </div>
+            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-md">
+              Active
+            </span>
+          </div>
+          <div>
+            <p className="text-[10px] text-gray-500 font-bold mb-1 tracking-wider uppercase">Total Instructors</p>
+            <h3 className="text-2xl font-bold text-gray-900">436</h3>
+          </div>
+        </div>
+
+        {/* Card 3 - Purple Background */}
+        <div className="bg-[#5e5ce6] rounded-2xl p-6 shadow-sm flex flex-col justify-between h-36 relative overflow-hidden text-white hover:shadow-md transition-shadow">
+          <div className="absolute right-0 top-0 opacity-10">
+            <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 100C0 100 20 80 50 80C80 80 100 60 100 60L100 0L0 0L0 100Z" fill="currentColor"/>
+            </svg>
+          </div>
+          <div className="flex justify-between items-start relative z-10">
+            <div className="w-8 h-8 rounded-full bg-yellow-400/20 flex items-center justify-center text-yellow-400">
+              <Clock className="w-4 h-4" />
+            </div>
+            <span className="px-2 py-1 bg-white/20 text-white text-[10px] font-semibold rounded-md">
+              Attention Required
+            </span>
+          </div>
+          <div className="relative z-10">
+            <p className="text-[10px] text-indigo-200 font-bold mb-1 tracking-wider uppercase">Pending Requests</p>
+            <h3 className="text-2xl font-bold">34</h3>
+          </div>
+        </div>
+
+        {/* Card 4 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col justify-between h-36 hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div className="flex -space-x-2">
+              <img className="w-6 h-6 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=1" alt="" />
+              <img className="w-6 h-6 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=2" alt="" />
+              <img className="w-6 h-6 rounded-full border-2 border-white" src="https://i.pravatar.cc/100?img=3" alt="" />
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] text-gray-500 font-bold mb-1 tracking-wider uppercase">Today's Sessions</p>
+            <h3 className="text-2xl font-bold text-gray-900">156</h3>
+          </div>
+        </div>
       </div>
 
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <SmallStatCard
-          title={t('assignments')}
-          value={secondaryStats.assignments.total}
-          icon={FileText}
-          color="bg-green-500"
-          details={[
-            { label: t('pending'), value: secondaryStats.assignments.pending, color: 'text-orange-600' },
-            { label: t('completed'), value: secondaryStats.assignments.completed }
-          ]}
-        />
-        <SmallStatCard
-          title={t('exams')}
-          value={secondaryStats.exams.total}
-          icon={FileText}
-          color="bg-red-500"
-          details={[
-            { label: t('completed'), value: secondaryStats.exams.completed },
-            { label: t('upcoming'), value: secondaryStats.exams.upcoming, color: 'text-orange-600' }
-          ]}
-        />
-        <SmallStatCard
-          title={t('subscriptions')}
-          value={secondaryStats.subscriptions.total}
-          icon={Clock}
-          color=""
-          hexColor={settings.primaryColor}
-          details={[
-            { label: t('activeLabel'), value: secondaryStats.subscriptions.active },
-            { label: t('pending'), value: secondaryStats.subscriptions.suspended, color: 'text-orange-600' }
-          ]}
-        />
-        <SmallStatCard
-          title={t('generalRate')}
-          value={secondaryStats.completionRate.totalTasks}
-          icon={Users}
-          color="bg-purple-500"
-          details={[
-            { label: t('assignmentsExams'), value: '' },
-            { label: t('completionRate'), value: `${secondaryStats.completionRate.rate}%` }
-          ]}
-        />
+      {/* Middle Row: Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Line Chart Card */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 lg:col-span-2">
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Sessions per Day</h3>
+              <p className="text-sm text-gray-500">Weekly tracking of educational engagement</p>
+            </div>
+            <button className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+              Last 7 Days
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+          
+          <div className="h-64 w-full relative mt-4">
+            <svg viewBox="0 0 800 200" className="w-full h-full preserve-3d" preserveAspectRatio="none">
+              <line x1="0" y1="50" x2="800" y2="50" stroke="#f3f4f6" strokeWidth="1" />
+              <line x1="0" y1="100" x2="800" y2="100" stroke="#f3f4f6" strokeWidth="1" />
+              <line x1="0" y1="150" x2="800" y2="150" stroke="#f3f4f6" strokeWidth="1" />
+              <line x1="0" y1="200" x2="800" y2="200" stroke="#f3f4f6" strokeWidth="1" />
+              
+              <path 
+                d="M 0,150 C 100,150 150,50 250,80 C 350,110 400,180 500,160 C 600,140 650,40 750,20 L 800,20" 
+                fill="none" 
+                stroke="#5e5ce6" 
+                strokeWidth="4" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+              />
+              
+              <circle cx="250" cy="80" r="4" fill="#fff" stroke="#5e5ce6" strokeWidth="2" />
+              <circle cx="500" cy="160" r="4" fill="#fff" stroke="#5e5ce6" strokeWidth="2" />
+              <circle cx="750" cy="20" r="4" fill="#fff" stroke="#5e5ce6" strokeWidth="2" />
+            </svg>
+            
+            <div className="absolute bottom-0 w-full flex justify-between text-xs text-gray-400 -mb-6 px-2">
+              <span>Mon</span>
+              <span>Tue</span>
+              <span>Wed</span>
+              <span>Thu</span>
+              <span>Fri</span>
+              <span>Sat</span>
+              <span>Sun</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bar Chart Card */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col">
+          <div className="flex justify-between items-start mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Active Users</h3>
+            <button className="text-gray-400 hover:text-gray-600 transition-colors">
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <div className="flex-1 flex flex-col justify-center">
+            <div className="flex justify-center items-end gap-6 h-32 mb-8">
+              <div className="w-12 bg-blue-500 rounded-t-sm h-full shadow-sm"></div>
+              <div className="w-12 bg-[#5e5ce6] rounded-t-sm h-3/4 shadow-sm"></div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-600 font-medium">Students</span>
+                  <span className="font-bold text-gray-900">8,241</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '80%' }}></div>
+                </div>
+              </div>
+              
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-600 font-medium">Instructors</span>
+                  <span className="font-bold text-gray-900">302</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div className="bg-[#5e5ce6] h-1.5 rounded-full" style={{ width: '40%' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Alerts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {alerts.map((alert, idx) => (
-          <AlertCard key={idx} {...alert} />
-        ))}
+      {/* Bottom Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Activity Feed */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 lg:col-span-2">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-900">Activity Feed</h3>
+            <button className="text-sm text-[#5e5ce6] font-medium hover:text-[#4b49b8] transition-colors">View All</button>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="flex gap-4">
+              <img src="https://i.pravatar.cc/100?img=4" alt="Ahmed" className="w-10 h-10 rounded-full object-cover shadow-sm" />
+              <div className="flex-1">
+                <p className="text-sm text-gray-800">
+                  <span className="font-bold text-gray-900">Ahmed Al-Farid</span> requested a reschedule for <span className="text-[#5e5ce6] font-medium">Advanced Mathematics</span>.
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                  <span className="text-xs text-gray-500">2 mins ago</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-4">
+              <img src="https://i.pravatar.cc/100?img=5" alt="Sara" className="w-10 h-10 rounded-full object-cover shadow-sm" />
+              <div className="flex-1">
+                <p className="text-sm text-gray-800">
+                  Session completed with <span className="font-bold text-gray-900">Sara Roberts</span>.
+                </p>
+                <p className="text-xs text-gray-500 mt-0.5">"Great session today! We also engaged in the physics module."</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                  <span className="text-xs text-gray-500">15 mins ago</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-4">
+              <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-[#5e5ce6] shadow-sm">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-800">
+                  <span className="font-bold text-gray-900">New Instructor Onboarded:</span> Dr. Julian Moore joined the Chemistry department.
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#5e5ce6]"></span>
+                  <span className="text-xs text-gray-500">2 hours ago</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* District Report Ready */}
+          <div className="bg-[#2a286b] rounded-2xl p-6 text-white relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+            <div className="absolute right-0 bottom-0 opacity-10">
+              <svg width="150" height="150" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="80" cy="80" r="50" stroke="currentColor" strokeWidth="15"/>
+                <circle cx="80" cy="80" r="20" stroke="currentColor" strokeWidth="10"/>
+              </svg>
+            </div>
+            <div className="relative z-10">
+              <h3 className="text-xl font-bold mb-3 text-white">District Report Ready</h3>
+              <p className="text-sm text-indigo-100/80 mb-6 leading-relaxed">
+                The monthly performance audit for Q2 is now available for review and signature.
+              </p>
+              <button className="px-5 py-2.5 bg-white text-[#2a286b] rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-gray-50 transition-colors">
+                Review Now
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Upcoming Sessions */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Upcoming Sessions</h3>
+            
+            <div className="space-y-3 mb-4">
+              <div className="flex justify-between items-center p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50/50 transition-colors group">
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900">AP Literature Review</h4>
+                  <p className="text-xs text-gray-500 mt-0.5">Today • 2:00 PM - 3:30 PM</p>
+                </div>
+                <button className="px-4 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition-colors group-hover:border-gray-300 shadow-sm">
+                  Join
+                </button>
+              </div>
+              
+              <div className="flex justify-between items-center p-3 rounded-xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50/50 transition-colors group">
+                <div>
+                  <h4 className="text-sm font-bold text-gray-900">Organic Chemistry Lab</h4>
+                  <p className="text-xs text-gray-500 mt-0.5">Today • 4:15 PM - 5:45 PM</p>
+                </div>
+                <button className="px-4 py-1.5 bg-white border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition-colors group-hover:border-gray-300 shadow-sm">
+                  Join
+                </button>
+              </div>
+            </div>
+            
+            <button className="w-full text-center text-sm text-gray-500 font-medium hover:text-gray-800 transition-colors mt-2">
+              See Full Calendar
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-  );
-
-  return (
-    <>
-      {renderDashboardHome()}
-      <SubscribePlanModal isOpen={showSubscribeModal} onClose={() => setShowSubscribeModal(false)} />
-    </>
   );
 }
 

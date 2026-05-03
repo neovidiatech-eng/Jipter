@@ -1,13 +1,18 @@
-import { Bell, LogOut, Menu, Play } from "lucide-react";
+import { Bell, LogOut, Menu, Play, Search, Command, ChevronDown, HelpCircle, Plus, MessageSquare } from "lucide-react";
 import { useSettings } from "../../contexts/SettingsContext";
 import { useSessions } from "../../contexts/SessionsContext";
 import React, { useState, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useProfile } from "../../features/student/hooks/useProfile";
+import { useCreateSchedule } from "../../features/admin/hooks/useSchedules";
+import { SessionFormData } from "../../lib/schemas/SessionSchema";
+import AddSessionModal from "../modals/AddSessionModal";
 
 interface HeaderProps {
   onMenuClick?: () => void;
   userRole: "admin" | "teacher" | "student";
+  userName?: string;
+  userEmail?: string;
   isCollapsed?: boolean;
 }
 
@@ -23,15 +28,42 @@ const TimeBox = ({ value, label }: { value: string; label: string }) => (
   </div>
 );
 
+
+
 export default function Header({
   onMenuClick,
   userRole,
+  userName,
+  userEmail,
   isCollapsed,
 }: HeaderProps) {
   const { settings } = useSettings();
   const { countdown, isSessionReady } = useSessions();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { data: profileResponse, isLoading, isError } = useProfile();
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const createSchedule = useCreateSchedule();
+
+  const handleAddSession = async (data: SessionFormData) => {
+    try {
+      await createSchedule.mutateAsync({
+        studentId: data.student,
+        teacherId: data.teacher,
+        subject_id: data.subject,
+        title: data.title,
+        description: data.description || '',
+        link: data.meetingLink || '',
+        notes: data.notes || '',
+        start_time: `${data.sessionDate}T${data.startTime}:00.000Z`,
+        type: data.type,
+        notification_Time: data.notification_Time
+      });
+      setShowAddModal(false);
+    } catch (error) {
+      console.error('Add session failed:', error);
+    }
+  };
 
   const profileData = profileResponse?.data;
 
@@ -44,6 +76,9 @@ export default function Header({
   const isStudent = userRole === "student";
   const isTeacherOrStudent = userRole === "teacher" || isStudent;
   const navigate = useNavigate();
+  const location = useLocation();
+  const isSessionsPage = location.pathname.includes("/sessions");
+  const isCurriculumPage = location.pathname.includes("/curriculum");
 
   const studentInfo = {
     name: profileData?.user?.name || "---",
@@ -120,6 +155,44 @@ export default function Header({
               </button>
             </div>
           )}
+
+          {!isTeacherOrStudent && (
+            <div className="flex w-full items-center pl-4">
+              {isSessionsPage || isCurriculumPage ? (
+                <div className="flex w-full items-center gap-8 pl-4 h-[90px]">
+                  <div className="flex items-center h-full gap-8">
+                    <button className="text-sm font-medium text-gray-500 hover:text-gray-900 whitespace-nowrap h-full flex items-center border-b-[3px] border-transparent hover:border-gray-300 transition-colors pt-1">Overview</button>
+                    <button className="text-sm font-bold text-[#6366f1] border-b-[3px] border-[#6366f1] whitespace-nowrap h-full flex items-center pt-1">Batch List</button>
+                    <button className="text-sm font-medium text-gray-500 hover:text-gray-900 whitespace-nowrap h-full flex items-center border-b-[3px] border-transparent hover:border-gray-300 transition-colors pt-1">Conflicts</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex w-full items-center gap-12 pl-4">
+                  {/* Search Bar */}
+                  <div className="relative w-full max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Search resources, students, or services..." 
+                      className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#6366f1]/20 transition-all text-left"
+                      dir="ltr"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <Command className="w-3 h-3 text-gray-400" />
+                      <span className="text-xs text-gray-400 font-medium">K</span>
+                    </div>
+                  </div>
+
+                  {/* Navigation Links */}
+                  <div className="hidden xl:flex items-center gap-8">
+                    <a href="#" className="text-sm font-bold text-gray-900">Directory</a>
+                    <a href="#" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Reports</a>
+                    <a href="#" className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">Archive</a>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 3. حاوية البروفايل */}
@@ -133,30 +206,54 @@ export default function Header({
                 Join
               </button>
               <DesktopProfile navigate={navigate} studentName={studentInfo.name} studentPlan={studentInfo.plan} studentAvatar={studentInfo.avatar} />
-              <button
-                onClick={handleLogout}
-                className="p-2 text-red-500 rounded-2xl hover:bg-red-50 transition-colors"
-              >
-                <LogOut size={20} />
-              </button>
+              {isStudent && (
+                <button
+                  onClick={handleLogout}
+                  className="p-2 text-red-500 rounded-2xl hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={20} />
+                </button>
+              )}
             </>
           )}
 
           {!isTeacherOrStudent && (
-            <div className="flex items-center gap-3 w-full justify-end">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                style={{ backgroundColor: settings.primaryColor }}
-              >
-                {settings.name.charAt(0)}
+            <div className="flex items-center gap-6">
+              {/* Right Side Actions */}
+              {!isSessionsPage && (
+                <button 
+                  onClick={() => setShowAddModal(true)}
+                  className="hidden md:flex items-center gap-2 px-4 py-2 border border-gray-200 text-[#5e5ce6] text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-lg leading-none">+</span> Create Session
+                </button>
+              )}
+              <div className="relative">
+                <Bell className="w-5 h-5 text-gray-500" />
+                <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></div>
               </div>
-              <h1 className="text-lg font-bold text-gray-900">
-                {settings.name}
-              </h1>
+              <div>
+                <MessageSquare className="w-5 h-5 text-gray-500" />
+              </div>
+              
+              <div className="flex items-center gap-3 cursor-pointer pl-4 border-l border-gray-100">
+                <div className="hidden md:block text-right">
+                  <p className="text-sm font-bold text-gray-900 leading-none">{userName || 'User'}</p>
+                  <p className="text-[10px] text-gray-500 font-bold mt-1 uppercase">{userRole}</p>
+                </div>
+                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(userName || 'U')}&background=1e1b4b&color=fff`} alt="User" className="w-10 h-10 rounded-full object-cover" />
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      <AddSessionModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={handleAddSession}
+      />
     </header>
   );
 }
